@@ -8,9 +8,24 @@ function App() {
   const [org, setOrg] = useState("");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("record_id");
-  const [msg, setMsg] = useState("Loading supplied CSVs…");
+  const [msg, setMsg] = useState("Upload all three CSV files to compare.");
 
   async function run(files = {}, chosenOrg = org) {
+    const requiredFiles = [
+      ["System A CSV", files.system_a],
+      ["System B CSV", files.system_b],
+      ["Locations CSV", files.locations],
+    ];
+
+    const missingFiles = requiredFiles
+      .filter(([, file]) => !file)
+      .map(([label]) => label);
+
+    if (missingFiles.length > 0) {
+      setMsg(`Required: upload ${missingFiles.join(", ")} before comparing.`);
+      return;
+    }
+
     setMsg("Comparing…");
 
     const fd = new FormData();
@@ -26,21 +41,21 @@ function App() {
     });
 
     try {
-      const response = await fetch("https://dealeros-h373.onrender.com/api/compare/", {
-        method: "POST",
-        body: fd,
-      });
+      const response = await fetch(
+        "https://dealeros-h373.onrender.com/api/compare/",
+        {
+          method: "POST",
+          body: fd,
+        }
+      );
 
       const text = await response.text();
-
       let data;
 
       try {
         data = JSON.parse(text);
       } catch {
-        throw new Error(
-          ` Check the API connection.`
-        );
+        throw new Error("Could not read the backend response. Check the API connection.");
       }
 
       if (!response.ok) {
@@ -50,17 +65,12 @@ function App() {
       }
 
       setRows(data.records || []);
-      setMsg(
-        `${data.count ?? data.records?.length ?? 0} reconciliation rows`
-      );
+      setReason("All");
+      setMsg(`${data.count ?? data.records?.length ?? 0} reconciliation rows`);
     } catch (error) {
       setMsg(error.message || "Could not connect to the backend.");
     }
   }
-
-  React.useEffect(() => {
-    run();
-  }, []);
 
   const reasons = ["All", ...new Set(rows.map((row) => row.reason))];
 
@@ -78,23 +88,20 @@ function App() {
     [rows, reason, query, sort]
   );
 
-  const counts = rows.reduce(
-    (output, row) => {
-      output[row.reason] = (output[row.reason] || 0) + 1;
-      return output;
-    },
-    {}
-  );
+  const counts = rows.reduce((output, row) => {
+    output[row.reason] = (output[row.reason] || 0) + 1;
+    return output;
+  }, {});
 
   function handleUpload() {
-    const files = Object.fromEntries(
+    const selectedFiles = Object.fromEntries(
       ["system_a", "system_b", "locations"].map((key) => [
         key,
         document.getElementById(key).files[0],
       ])
     );
 
-    run(files);
+    run(selectedFiles, org);
   }
 
   return (
@@ -111,14 +118,7 @@ function App() {
       <section className="controls">
         <label>
           Organization
-          <select
-            value={org}
-            onChange={(event) => {
-              const selectedOrg = event.target.value;
-              setOrg(selectedOrg);
-              run({}, selectedOrg);
-            }}
-          >
+          <select value={org} onChange={(event) => setOrg(event.target.value)}>
             <option value="">All organizations</option>
             <option value="ORG-A">ORG-A</option>
             <option value="ORG-B">ORG-B</option>
@@ -128,7 +128,7 @@ function App() {
         {["system_a", "system_b", "locations"].map((name, index) => (
           <label key={name}>
             {["System A CSV", "System B CSV", "Locations CSV"][index]}
-            <input type="file" accept=".csv" id={name} />
+            <input type="file" accept=".csv" id={name} required />
           </label>
         ))}
 
@@ -160,10 +160,7 @@ function App() {
             onChange={(event) => setQuery(event.target.value)}
           />
 
-          <select
-            value={reason}
-            onChange={(event) => setReason(event.target.value)}
-          >
+          <select value={reason} onChange={(event) => setReason(event.target.value)}>
             {reasons.map((item) => (
               <option key={item} value={item}>
                 {item}
@@ -171,10 +168,7 @@ function App() {
             ))}
           </select>
 
-          <select
-            value={sort}
-            onChange={(event) => setSort(event.target.value)}
-          >
+          <select value={sort} onChange={(event) => setSort(event.target.value)}>
             <option value="record_id">Sort: record</option>
             <option value="reason">Sort: reason</option>
             <option value="system_a_amount">Sort: amount</option>
