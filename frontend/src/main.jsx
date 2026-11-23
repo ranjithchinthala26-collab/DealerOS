@@ -8,7 +8,9 @@ function App() {
   const [org, setOrg] = useState("");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("record_id");
-  const [msg, setMsg] = useState("Upload all three CSV files to compare.");
+  const [msg, setMsg] = useState(
+    "Please upload all 3 CSV files before comparing."
+  );
 
   async function run(files = {}, chosenOrg = org) {
     const requiredFiles = [
@@ -22,7 +24,9 @@ function App() {
       .map(([label]) => label);
 
     if (missingFiles.length > 0) {
-      setMsg(`Required: upload ${missingFiles.join(", ")} before comparing.`);
+      setMsg(
+        `Please upload all 3 CSV files before comparing. Required: ${missingFiles.join(", ")}.`
+      );
       return;
     }
 
@@ -55,7 +59,9 @@ function App() {
       try {
         data = JSON.parse(text);
       } catch {
-        throw new Error("Could not read the backend response. Check the API connection.");
+        throw new Error(
+          "Could not read the backend response. Check the API connection."
+        );
       }
 
       if (!response.ok) {
@@ -112,7 +118,15 @@ function App() {
           <h1>Reconciliation workspace</h1>
           <p>Compare source records with a traceable reason for every result.</p>
         </div>
-        <span className="status">● {msg}</span>
+
+        <span
+          className={`status ${
+            msg.startsWith("Please upload") ? "status-error" : ""
+          }`}
+        >
+          {msg.startsWith("Please upload") && "⚠ "}
+          {msg}
+        </span>
       </header>
 
       <section className="controls">
@@ -160,7 +174,10 @@ function App() {
             onChange={(event) => setQuery(event.target.value)}
           />
 
-          <select value={reason} onChange={(event) => setReason(event.target.value)}>
+          <select
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          >
             {reasons.map((item) => (
               <option key={item} value={item}>
                 {item}
