@@ -26,7 +26,7 @@ function App() {
     });
 
     try {
-      const response = await fetch("/api/compare/", {
+      const response = await fetch("https://dealeros-h373.onrender.com/api/compare/", {
         method: "POST",
         body: fd,
       });
