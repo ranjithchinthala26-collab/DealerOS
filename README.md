@@ -58,4 +58,4 @@ python manage.py test reconcile
 
 This assessment focuses on CSV import, reconciliation, organization scoping, and a results table. Uploaded files are processed in memory; authentication, file persistence, pagination, and production security are outside the current scope.
 
-AI tools assisted with implementation and documentation. I reviewed and adapted the work and am responsible for understanding and verifying the final code.
+AI tools assisted with implementation and documentation. I reviewed and adapted the work and am responsible for understanding and verifying the final code
